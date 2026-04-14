@@ -1,0 +1,260 @@
+---
+title: "BUS 4028 Assignment - Car Price Dataset"
+author: "Group 4"
+date: "2026-04-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Introduction
+
+This report presents an analysis of a car price dataset using R, focusing on data cleaning, transformation, and exploratory data analysis. The main goal of this study is to prepare the dataset for meaningful analysis and to identify patterns and relationships between key variables that influence car prices.
+
+The dataset contains information on various car attributes such as price, mileage, engine characteristics, and other related features. Before analysis, the data is cleaned to remove missing values and duplicate entries, ensuring accuracy and reliability.
+
+After preprocessing, different statistical and visualization techniques are applied to explore the dataset. These include summary statistics, correlation analysis, and graphical representations to better understand how variables interact with car price.
+
+Overall, this analysis demonstrates how proper data preparation and exploratory techniques can be used to extract useful insights from raw data and support better data-driven decision-making.
+
+The objectives of this analysis include:
+
+1.  Print the Structure of your dataset
+2.  List the variables in your dataset
+3.  Print the top 15 rows of your dataset
+4.  Write a user-defined function from dataset
+5.  Use data manipulation techniques and filter rows
+6.  Perform data reshaping and joining
+7.  Remove missing values in your dataset
+8.  Identify and remove duplicated data in your dataset 
+9.  Reorder multiple rows in (Descending Order) 
+10. Rename columns names in your dataset
+11. Add new variables in your data frame  
+12. Split dataset into training and testing sets
+13. Print the summary statistics of your dataset
+14. Perform Mean, Median, Mode and Range with numeric variables
+15. Plot a scatter plot of variable in your dataset
+16. Plot a bar plot of variables in your dataset
+17. Analyze correlation between variables by applying pearson correlation
+
+
+## Load Dataset
+```{r}
+library(tidyverse)
+
+car_data <- read_csv("car_price_dataset.csv")
+```
+## Print Structure of your Dataset
+```{r}
+str(car_data)
+```
+## List Variables of the Dataset
+```{r}
+head(car_data)
+colnames(car_data)
+str(car_data)
+```
+
+## Print the top 15 rows of your dataset
+```{r}
+head(car_data, 15)
+```
+
+## User-Defined Function
+```{r}
+calculate_car_value <- function(price, mileage) {
+  value <- price - (mileage * 0.05)
+  return(value)
+}
+car_data$Adjusted_Value <- calculate_car_value(
+  car_data$Price,
+  car_data$Mileage
+)
+
+head(car_data)
+```
+
+## Use data manipulation techniques and filter rows
+```{r}
+filtered_data <- subset(car_data, Brand == "BMW")
+
+head(filtered_data)
+```
+
+## Dependent & Independent Variables, Reshape and Join
+```{r}
+dependent_df <- car_data %>%
+  select(Car_ID, Price)
+
+independent_df <- car_data %>%
+  select(Car_ID, Engine_Size, Horsepower, Mileage, Model_Year, Owner_Count)
+
+independent_long <- independent_df %>%
+  pivot_longer(
+    cols = -Car_ID,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+
+joined_df <- independent_long %>%
+  inner_join(dependent_df, by = "Car_ID")
+
+head(joined_df, 15)
+```
+
+## Data Cleaning
+## Remove Missing Values
+```{r}
+clean_data <- na.omit(car_data)
+head(clean_data)
+```
+
+## Remove Duplicate Records
+```{r}
+clean_data <- distinct(clean_data)
+head(clean_data)
+```
+
+## Sort Data by Car Price (Descending)
+```{r}
+colnames(clean_data)
+```
+
+```{r}
+sorted_data <- clean_data %>%
+  arrange(desc(Price))
+
+head(sorted_data)
+```
+
+## Rename Columns names
+```{r}
+clean_data <- clean_data %>%
+  rename(
+    Car_Price = Price,
+    Car_Mileage = Mileage
+  )
+
+head(clean_data)
+```
+
+## Add New Variables in data frame
+```{r}
+car_data <- car_data %>%
+  mutate(
+    Price_Per_Horsepower = round(Price / Horsepower, 2),
+    Engine_Size_CC = Engine_Size * 1000
+  )
+
+car_data %>%
+  select(Brand, Price, Horsepower, Price_Per_Horsepower,
+         Engine_Size, Engine_Size_CC) %>%
+  head(10)
+```
+
+## Create Training and Test Set
+```{r}
+set.seed(123)
+
+train_indices <- sample(
+  1:nrow(car_data),
+  size = floor(0.80 * nrow(car_data)),
+  replace = FALSE
+)
+
+train_set <- car_data %>% slice(train_indices)
+test_set <- car_data %>% slice(-train_indices)
+
+cat("Total rows:        ", nrow(car_data), "\n")
+cat("Training set rows: ", nrow(train_set), "\n")
+cat("Test set rows:     ", nrow(test_set), "\n")
+```
+
+## Summary Statistics
+```{r}
+summary(car_data)
+```
+## Mean, Median, Mode and Range
+```{r}
+# Function to calculate mode
+get_mode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+# Select Price column
+col_target <- car_data$Price
+
+# Calculate statistics
+Statistics_Summary <- list(
+  Mean = mean(col_target, na.rm = TRUE),
+  Median = median(col_target, na.rm = TRUE),
+  Mode = get_mode(col_target),
+  Standard_Deviation = sd(col_target, na.rm = TRUE),
+  Min = min(col_target, na.rm = TRUE),
+  Max = max(col_target, na.rm = TRUE),
+  Range = max(col_target, na.rm = TRUE) - min(col_target, na.rm = TRUE)
+)
+
+Statistics_Summary
+
+```
+
+## Scatter Plot of variables
+```{r}
+plot(car_data$Engine_Size, car_data$Price,
+     main = "Scatter Plot: Engine Size vs Price",
+     xlab = "Vehicle Engine Size",
+     ylab = "Vehicle Price",
+     pch = 19,
+     col = "red")
+```
+
+## Bar plot of car brands
+```{r}
+barplot(table(car_data$Brand),
+        main = "Number of Cars by Brand",
+        xlab = "Brand",
+        ylab = "Count",
+        col = "lightblue")
+```
+
+## Pearson Correlation
+```{r}
+correlation_result <- cor(
+  car_data$Price,
+  car_data$Horsepower,
+  method = "pearson"
+)
+
+cat("Pearson Correlation between Price and Horsepower:",
+    round(correlation_result, 4), "\n")
+```
+## Visualization
+```{r}
+ggplot(car_data, aes(x = Horsepower, y = Price)) +
+  geom_point(color = "steelblue", alpha = 0.5) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(
+    title = "Pearson Correlation: Price vs Horsepower",
+    x = "Horsepower",
+    y = "Price"
+  ) +
+  theme_minimal()
+```
+
+
+
+## Conclusion
+his study focused on the cleaning, transformation, and analysis of a car price dataset using R. The dataset was first explored to understand its structure and variables, followed by essential data preparation steps such as handling missing values, removing duplicate records, and organizing the data for analysis.
+
+After cleaning, various statistical and visual analysis techniques were applied to gain insights into the relationships between key variables such as price, mileage, and other vehicle attributes. Summary statistics and correlation analysis helped identify patterns and potential relationships within the dataset, while visualizations provided a clearer understanding of trends and distributions.
+
+Overall, the analysis demonstrates the importance of proper data preparation before performing any meaningful statistical analysis. Clean and well-structured data improves the reliability of results and supports better decision-making. Future analysis could involve building predictive models to estimate car prices based on selected features.
+
+
+
